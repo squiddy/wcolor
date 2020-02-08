@@ -1,0 +1,4 @@
+wlr-layer-shell-unstable-protocol.*
+wlr-screencopy-unstable-protocol.*
+xdg-shell-protocol.*
+wcolor
