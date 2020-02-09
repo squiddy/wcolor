@@ -256,8 +256,15 @@ static void pointer_handle_button(void *data, struct wl_pointer *wl_pointer,
     }
 }
 
+static void pointer_handle_enter(void *data, struct wl_pointer *wl_pointer,
+                                 uint32_t serial, struct wl_surface *surface,
+                                 wl_fixed_t surface_x, wl_fixed_t surface_y)
+{
+    wl_pointer_set_cursor(wl_pointer, serial, NULL, 0, 0);
+}
+
 static const struct wl_pointer_listener pointer_listener = {
-    .enter = noop,
+    .enter = pointer_handle_enter,
     .leave = noop,
     .motion = pointer_handle_motion,
     .button = pointer_handle_button,
