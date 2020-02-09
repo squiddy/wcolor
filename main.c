@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdbool.h>
@@ -74,8 +75,8 @@ void render(struct wcolor_surface *surface)
     struct wcolor_state *state = surface->state;
 
     wl_subsurface_set_position(surface->subsurface,
-                               state->cursor_x + 20,
-                               state->cursor_y + 20);
+                               state->cursor_x - 50,
+                               state->cursor_y - 50);
     wl_surface_attach(surface->preview_surface, NULL, 0, 0);
     wl_surface_commit(surface->preview_surface);
 
@@ -105,16 +106,14 @@ void render(struct wcolor_surface *surface)
     state->color = color;
 
     cairo_t *cairo = cairo_create(cairo_surface);
+    memset(surface->data + offset, 0, 100 * 100 * 4);
     cairo_set_operator(cairo, CAIRO_OPERATOR_SOURCE);
     cairo_set_source_rgb(cairo,
                          (color >> (2 * 8) & 0xFF) / 255.0,
                          (color >> (1 * 8) & 0xFF) / 255.0,
                          (color >> (0 * 8) & 0xFF) / 255.0);
-    cairo_paint(cairo);
-
-    cairo_set_source_rgb(cairo, 0, 0, 0);
-    cairo_set_line_width(cairo, 1);
-    cairo_rectangle(cairo, 0, 0, 100, 100);
+    cairo_set_line_width(cairo, 20);
+    cairo_arc(cairo, 50, 50, 30, 0, 2 * M_PI);
     cairo_stroke_preserve(cairo);
 
     wl_surface_set_buffer_scale(surface->preview_surface, 1);
@@ -201,6 +200,14 @@ static void create_layer_surface(struct wcolor_surface *surface)
     surface->surface = wl_compositor_create_surface(state->compositor);
 
     surface->preview_surface = wl_compositor_create_surface(state->compositor);
+
+    // Assign empty region to pass through pointer events from subsurface to
+    // main surface. Otherwise we would get relative pointer movements on our
+    // preview surface.
+    struct wl_region *region = wl_compositor_create_region(state->compositor);
+    wl_region_add(region, 0, 0, 0, 0);
+    wl_surface_set_input_region(surface->preview_surface, region);
+
     surface->subsurface = wl_subcompositor_get_subsurface(state->subcompositor, surface->preview_surface, surface->surface);
     wl_subsurface_set_desync(surface->subsurface);
 
