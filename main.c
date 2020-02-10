@@ -108,6 +108,17 @@ void render(struct wcolor_surface *surface)
     cairo_t *cairo = cairo_create(cairo_surface);
     memset(surface->data + offset, 0, 100 * 100 * 4);
     cairo_set_operator(cairo, CAIRO_OPERATOR_SOURCE);
+
+    // Black outline
+    cairo_set_source_rgb(cairo,
+                         0.0,
+                         0.0,
+                         0.0);
+    cairo_set_line_width(cairo, 22);
+    cairo_arc(cairo, 50, 50, 30, 0, 2 * M_PI);
+    cairo_stroke_preserve(cairo);
+
+    // Circle filled with current color
     cairo_set_source_rgb(cairo,
                          (color >> (2 * 8) & 0xFF) / 255.0,
                          (color >> (1 * 8) & 0xFF) / 255.0,
