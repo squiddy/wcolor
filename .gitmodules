@@ -1,0 +1,7 @@
+[submodule "deps/zig-wayland"]
+	path = deps/zig-wayland
+	url = https://github.com/squiddy/zig-wayland
+	branch = improve-fixed-argument
+[submodule "deps/wlr-protocols"]
+	path = deps/wlr-protocols
+	url = https://github.com/swaywm/wlr-protocols

@@ -17,6 +17,7 @@ printed to standard output.
 
 ## References
 
+* https://github.com/ifreund/zig-wayland
 * https://github.com/Soft/xcolor (the X11 version)
 * https://github.com/emersion/grim
 * https://github.com/emersion/slurp (consulting the source of grim and slurp helped a lot in understanding Wayland)
