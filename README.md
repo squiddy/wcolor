@@ -17,12 +17,8 @@ printed to standard output.
 
 ## Setup
 
-* `cd deps/zig-wayland/`
 * `zig build`
-* `./zig-cache/bin/scanner protocol/wayland.xml /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml ../wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml ../wlr-protocols/unstable/wlr-screencopy-unstable-v1.xml`
-
-* `cd ..`
-* `zig build`
+* `zig build run`
 
 ## References
 

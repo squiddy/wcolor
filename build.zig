@@ -1,6 +1,7 @@
 const std = @import("std");
 const Builder = std.build.Builder;
 const Step = std.build.Step;
+const RunStep = std.build.RunStep;
 
 pub fn build(b: *Builder) void {
     // Standard target options allows the person running `zig build` to choose
@@ -13,7 +14,13 @@ pub fn build(b: *Builder) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
 
+    const build_wayland = b.addSystemCommand(&[_][]const u8{
+        "zig", "build",
+    });
+    build_wayland.cwd = "deps/zig-wayland/";
+
     const scan_protocols = ScanProtocolsStep.create(b);
+    scan_protocols.step.dependOn(&build_wayland.step);
 
     const exe = b.addExecutable("wcolor", "src/main.zig");
     exe.setTarget(target);
@@ -21,13 +28,14 @@ pub fn build(b: *Builder) void {
     exe.addPackagePath("wayland", "deps/zig-wayland/wayland.zig");
     exe.linkSystemLibrary("wayland-client");
     exe.linkSystemLibrary("cairo");
-    exe.step.dependOn(&scan_protocols.step);
-    exe.addCSourceFile("generated/wlr_layer_shell.c", &[_][]const u8{"-std=c99"});
-    exe.addCSourceFile("generated/wlr_screencopy.c", &[_][]const u8{"-std=c99"});
-    exe.addCSourceFile("generated/xdg_shell.c", &[_][]const u8{"-std=c99"});
+
+    exe.addCSourceFile("generated/wlr-layer-shell-unstable-v1.c", &[_][]const u8{"-std=c99"});
+    exe.addCSourceFile("generated/wlr-screencopy-unstable-v1.c", &[_][]const u8{"-std=c99"});
+    exe.addCSourceFile("generated/xdg-shell.c", &[_][]const u8{"-std=c99"});
     exe.linkLibC();
 
     exe.install();
+    exe.step.dependOn(&scan_protocols.step);
 
     const run_cmd = exe.run();
     run_cmd.step.dependOn(b.getInstallStep());
@@ -59,17 +67,30 @@ const ScanProtocolsStep = struct {
         const protocol_dir = std.fmt.trim(try self.builder.exec(
             &[_][]const u8{ "pkg-config", "--variable=pkgdatadir", "wayland-protocols" },
         ));
-        const xml_path = try std.fs.path.join(self.builder.allocator, &[_][]const u8{ protocol_dir, "stable/xdg-shell/xdg-shell.xml" });
-        _ = try self.builder.exec(
-            &[_][]const u8{ "wayland-scanner", "private-code", xml_path, "generated/xdg_shell.c" },
-        );
 
-        _ = try self.builder.exec(
-            &[_][]const u8{ "wayland-scanner", "private-code", "deps/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml", "generated/wlr_layer_shell.c" },
-        );
+        const buffer = try self.builder.allocator.alloc(u8, 256);
+        const cwd = try std.os.getcwd(buffer);
 
-        _ = try self.builder.exec(
-            &[_][]const u8{ "wayland-scanner", "private-code", "deps/wlr-protocols/unstable/wlr-screencopy-unstable-v1.xml", "generated/wlr_screencopy.c" },
-        );
+        const protocols = [_][]const u8{
+            try std.fs.path.join(self.builder.allocator, &[_][]const u8{ cwd, "deps/zig-wayland/protocol/wayland.xml" }),
+            try std.fs.path.join(self.builder.allocator, &[_][]const u8{ protocol_dir, "stable/xdg-shell/xdg-shell.xml" }),
+            try std.fs.path.join(self.builder.allocator, &[_][]const u8{ cwd, "deps/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml" }),
+            try std.fs.path.join(self.builder.allocator, &[_][]const u8{ cwd, "deps/wlr-protocols/unstable/wlr-screencopy-unstable-v1.xml" }),
+        };
+
+        // Generate bindings
+        const cmd = self.builder.addSystemCommand(&[_][]const u8{
+            "./zig-cache/bin/scanner", protocols[0], protocols[1], protocols[2], protocols[3],
+        });
+        cmd.cwd = "deps/zig-wayland/";
+        try cmd.step.make();
+
+        // Scan protocols with wayland-scanner
+        for (protocols) |protocol_path| {
+            const filename = std.fs.path.basename(protocol_path);
+            _ = try self.builder.exec(
+                &[_][]const u8{ "wayland-scanner", "private-code", protocol_path, self.builder.fmt("generated/{}.c", .{filename[0 .. filename.len - 4]}) },
+            );
+        }
     }
 };
