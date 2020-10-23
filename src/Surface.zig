@@ -89,16 +89,11 @@ pub fn createSurface(self: *Self, width: i32, height: i32) anyerror!void {
     const layer_surface = try layer_shell.getLayerSurface(
         surface,
         self.output,
-        @enumToInt(wlr.LayerShellV1.Layer.overlay),
+        wlr.LayerShellV1.Layer.overlay,
         "overlay",
     );
     layer_surface.setSize(0, 0);
-    layer_surface.setAnchor(
-        @enumToInt(wlr.LayerSurfaceV1.Anchor.top) |
-            @enumToInt(wlr.LayerSurfaceV1.Anchor.bottom) |
-            @enumToInt(wlr.LayerSurfaceV1.Anchor.right) |
-            @enumToInt(wlr.LayerSurfaceV1.Anchor.left),
-    );
+    layer_surface.setAnchor(.{ .top = true, .bottom = true, .right = true, .left = true });
     layer_surface.setExclusiveZone(-1);
     try layer_surface.setListener(*Self, layerSurfaceListener, self);
     surface.commit();
@@ -195,8 +190,8 @@ fn frameListener(frame: *wlr.ScreencopyFrameV1, event: wlr.ScreencopyFrameV1.Eve
             frame.destroy();
         },
         .flags => |flags| {
-            if (flags.flags & 1 == 1) {
-                self.surface.?.setBufferTransform(@enumToInt(wl.Output.Transform.flipped_180));
+            if (flags.flags.y_invert) {
+                self.surface.?.setBufferTransform(wl.Output.Transform.flipped_180);
             }
         },
         .failed => {},

@@ -32,7 +32,7 @@ pub fn init(shm: *wl.Shm, width: i32, height: i32) anyerror!Self {
         width,
         height,
         stride,
-        @enumToInt(wl.Shm.Format.argb8888),
+        wl.Shm.Format.argb8888,
     );
 
     return Self{
