@@ -124,9 +124,7 @@ pub fn handlePointerMotion(self: *Self, x: i24, y: i24) void {
     const cx = @intCast(u32, x);
     const cy = @intCast(u32, y);
 
-    // TODO index out of bounds when moving mouse to the top
-    // TODO Figure out correct format of buffer.
-    const offset = (self.height - cy) * self.width * 4 + cx * 4;
+    const offset = (self.height - cy - 1) * self.width * 4 + cx * 4;
     self.color = Color{ .r = image[offset + 2], .g = image[offset + 1], .b = image[offset] };
 
     {
