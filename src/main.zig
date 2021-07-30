@@ -4,7 +4,7 @@ const os = std.os;
 const wayland = @import("wayland");
 const wl = wayland.client.wl;
 const xdg = wayland.client.xdg;
-const wlr = wayland.client.wlr;
+const wlr = wayland.client.zwlr;
 
 const Surface = @import("Surface.zig");
 
@@ -34,7 +34,7 @@ pub fn main() !void {
         .active_surface = null,
     };
 
-    try registry.setListener(*Context, registryListener, &context);
+    registry.setListener(*Context, registryListener, &context);
     _ = try display.roundtrip();
 
     for (context.surfaces.items) |*surface| {
@@ -51,22 +51,22 @@ pub fn main() !void {
 fn registryListener(registry: *wl.Registry, event: wl.Registry.Event, context: *Context) void {
     switch (event) {
         .global => |global| {
-            if (std.cstr.cmp(global.interface, wl.Compositor.interface().name) == 0) {
+            if (std.cstr.cmp(global.interface, wl.Compositor.getInterface().name) == 0) {
                 context.compositor = registry.bind(global.name, wl.Compositor, 4) catch return;
-            } else if (std.cstr.cmp(global.interface, wl.Subcompositor.interface().name) == 0) {
+            } else if (std.cstr.cmp(global.interface, wl.Subcompositor.getInterface().name) == 0) {
                 context.subcompositor = registry.bind(global.name, wl.Subcompositor, 1) catch return;
-            } else if (std.cstr.cmp(global.interface, wl.Shm.interface().name) == 0) {
+            } else if (std.cstr.cmp(global.interface, wl.Shm.getInterface().name) == 0) {
                 context.shm = registry.bind(global.name, wl.Shm, 1) catch return;
-            } else if (std.cstr.cmp(global.interface, wlr.LayerShellV1.interface().name) == 0) {
+            } else if (std.cstr.cmp(global.interface, wlr.LayerShellV1.getInterface().name) == 0) {
                 context.layer_shell = registry.bind(global.name, wlr.LayerShellV1, 2) catch return;
-            } else if (std.cstr.cmp(global.interface, wlr.ScreencopyManagerV1.interface().name) == 0) {
+            } else if (std.cstr.cmp(global.interface, wlr.ScreencopyManagerV1.getInterface().name) == 0) {
                 context.screencopy = registry.bind(global.name, wlr.ScreencopyManagerV1, 1) catch return;
-            } else if (std.cstr.cmp(global.interface, wl.Output.interface().name) == 0) {
+            } else if (std.cstr.cmp(global.interface, wl.Output.getInterface().name) == 0) {
                 const output = registry.bind(global.name, wl.Output, 3) catch return;
                 context.surfaces.append(Surface.init(context, output)) catch return;
-            } else if (std.cstr.cmp(global.interface, wl.Seat.interface().name) == 0) {
+            } else if (std.cstr.cmp(global.interface, wl.Seat.getInterface().name) == 0) {
                 const seat = registry.bind(global.name, wl.Seat, 1) catch return;
-                seat.setListener(*Context, seatListener, context) catch return;
+                seat.setListener(*Context, seatListener, context);
             }
         },
         // TODO Check for removed output / seat
@@ -78,7 +78,7 @@ fn seatListener(seat: *wl.Seat, event: wl.Seat.Event, context: *Context) void {
     switch (event) {
         .capabilities => |data| {
             const pointer = seat.getPointer() catch return;
-            pointer.setListener(*Context, pointerListener, context) catch return;
+            pointer.setListener(*Context, pointerListener, context);
         },
         .name => {},
     }

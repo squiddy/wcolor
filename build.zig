@@ -9,7 +9,7 @@ pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
     const mode = b.standardReleaseOptions();
 
-    const scanner = ScanProtocolsStep.create(b, "deps/zig-wayland/");
+    const scanner = ScanProtocolsStep.create(b);
     scanner.addSystemProtocol("stable/xdg-shell/xdg-shell.xml");
     scanner.addProtocolPath("deps/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml");
     scanner.addProtocolPath("deps/wlr-protocols/unstable/wlr-screencopy-unstable-v1.xml");

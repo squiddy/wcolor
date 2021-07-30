@@ -5,7 +5,7 @@ const os = std.os;
 
 const wayland = @import("wayland");
 const wl = wayland.client.wl;
-const wlr = wayland.client.wlr;
+const wlr = wayland.client.zwlr;
 
 const c = @cImport({
     @cInclude("cairo/cairo.h");
@@ -63,7 +63,7 @@ pub fn init(context: *Context, output: *wl.Output) Self {
 }
 
 pub fn setup(self: *Self) anyerror!void {
-    try self.output.setListener(*Self, outputListener, self);
+    self.output.setListener(*Self, outputListener, self);
 }
 
 pub fn createSurface(self: *Self, width: i32, height: i32) anyerror!void {
@@ -95,7 +95,7 @@ pub fn createSurface(self: *Self, width: i32, height: i32) anyerror!void {
     layer_surface.setSize(0, 0);
     layer_surface.setAnchor(.{ .top = true, .bottom = true, .right = true, .left = true });
     layer_surface.setExclusiveZone(-1);
-    try layer_surface.setListener(*Self, layerSurfaceListener, self);
+    layer_surface.setListener(*Self, layerSurfaceListener, self);
     surface.commit();
 
     self.buffer = try Buffer.init(shm, width, height);
@@ -110,7 +110,7 @@ pub fn createSurface(self: *Self, width: i32, height: i32) anyerror!void {
 
 fn show(self: *Self) anyerror!void {
     const frame = try self.context.screencopy.?.captureOutput(0, self.output);
-    try frame.setListener(*Self, frameListener, self);
+    frame.setListener(*Self, frameListener, self);
 }
 
 pub fn handlePointerLeft(self: *Self) void {
