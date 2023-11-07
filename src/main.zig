@@ -77,6 +77,7 @@ fn registryListener(registry: *wl.Registry, event: wl.Registry.Event, context: *
 fn seatListener(seat: *wl.Seat, event: wl.Seat.Event, context: *Context) void {
     switch (event) {
         .capabilities => |data| {
+            _ = data;
             const pointer = seat.getPointer() catch return;
             pointer.setListener(*Context, pointerListener, context);
         },

@@ -16,17 +16,17 @@ pub fn init(shm: *wl.Shm, width: i32, height: i32) anyerror!Self {
     const size = stride * height;
 
     const fd = try os.memfd_create("foo", 0);
-    try os.ftruncate(fd, @intCast(u64, size));
+    try os.ftruncate(fd, @as(u64, @intCast(size)));
     const data = try os.mmap(
         null,
-        @intCast(usize, size),
+        @as(usize, @intCast(size)),
         os.PROT_READ | os.PROT_WRITE,
         os.MAP_SHARED,
         fd,
         0,
     );
 
-    const pool = try shm.createPool(fd, @intCast(i32, size));
+    const pool = try shm.createPool(fd, @as(i32, @intCast(size)));
     const buffer = try pool.createBuffer(
         0,
         width,

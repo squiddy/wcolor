@@ -22,15 +22,15 @@ const Color = struct {
     b: u8,
 
     pub fn floatRed(self: Color) f16 {
-        return @intToFloat(f16, self.r) / 255.0;
+        return @as(f16, @floatFromInt(self.r)) / 255.0;
     }
 
     pub fn floatGreen(self: Color) f16 {
-        return @intToFloat(f16, self.g) / 255.0;
+        return @as(f16, @floatFromInt(self.g)) / 255.0;
     }
 
     pub fn floatBlue(self: Color) f16 {
-        return @intToFloat(f16, self.b) / 255.0;
+        return @as(f16, @floatFromInt(self.b)) / 255.0;
     }
 };
 
@@ -67,8 +67,8 @@ pub fn setup(self: *Self) anyerror!void {
 }
 
 pub fn createSurface(self: *Self, width: i32, height: i32) anyerror!void {
-    self.width = @intCast(u32, width);
-    self.height = @intCast(u32, height);
+    self.width = @as(u32, @intCast(width));
+    self.height = @as(u32, @intCast(height));
 
     const layer_shell = self.context.layer_shell orelse return error.NoWlrLayerShell;
     const compositor = self.context.compositor orelse return error.NoWlCompositor;
@@ -121,15 +121,15 @@ pub fn handlePointerLeft(self: *Self) void {
 
 pub fn handlePointerMotion(self: *Self, x: i24, y: i24) void {
     const image = self.buffer.?.data;
-    const cx = @intCast(u32, x);
-    const cy = @intCast(u32, y);
+    const cx = @as(u32, @intCast(x));
+    const cy = @as(u32, @intCast(y));
 
     const offset = (self.height - cy - 1) * self.width * 4 + cx * 4;
     self.color = Color{ .r = image[offset + 2], .g = image[offset + 1], .b = image[offset] };
 
     {
         const cairo_surface = c.cairo_image_surface_create_for_data(
-            @ptrCast([*c]u8, self.preview_buffer.?.data),
+            @as([*c]u8, @ptrCast(self.preview_buffer.?.data)),
             c.cairo_format_t.CAIRO_FORMAT_ARGB32,
             indicatorSize,
             indicatorSize,
@@ -180,6 +180,7 @@ pub fn handlePointerMotion(self: *Self, x: i24, y: i24) void {
 fn frameListener(frame: *wlr.ScreencopyFrameV1, event: wlr.ScreencopyFrameV1.Event, self: *Self) void {
     switch (event) {
         .buffer => |data| {
+            _ = data;
             frame.copy(self.buffer.?.buffer);
         },
         .ready => {
@@ -210,12 +211,19 @@ fn layerSurfaceListener(layer_surface: *wlr.LayerSurfaceV1, event: wlr.LayerSurf
 }
 
 fn outputListener(output: *wl.Output, event: wl.Output.Event, self: *Self) void {
+    _ = output;
     switch (event) {
-        .geometry => |geometry| {},
+        .geometry => |geometry| {
+            _ = geometry;
+        },
         .mode => |mode| {
             self.createSurface(mode.width, mode.height) catch @panic("Couldn't create surface.");
         },
-        .scale => |scale| {},
-        .done => |done| {},
+        .scale => |scale| {
+            _ = scale;
+        },
+        .done => |done| {
+            _ = done;
+        },
     }
 }

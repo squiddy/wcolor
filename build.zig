@@ -1,35 +1,32 @@
 const std = @import("std");
-const Builder = std.build.Builder;
-const Step = std.build.Step;
-const RunStep = std.build.RunStep;
 
-const ScanProtocolsStep = @import("deps/zig-wayland/build.zig").ScanProtocolsStep;
+const Scanner = @import("deps/zig-wayland/build.zig").Scanner;
 
-pub fn build(b: *Builder) void {
+pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{});
-    const mode = b.standardReleaseOptions();
+    const optimize = b.standardOptimizeOption(.{});
 
-    const scanner = ScanProtocolsStep.create(b);
+    const scanner = Scanner.create(b, .{});
+
+    const wayland = b.createModule(.{ .source_file = scanner.result });
+
     scanner.addSystemProtocol("stable/xdg-shell/xdg-shell.xml");
-    scanner.addProtocolPath("deps/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml");
-    scanner.addProtocolPath("deps/wlr-protocols/unstable/wlr-screencopy-unstable-v1.xml");
+    scanner.addCustomProtocol("deps/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml");
+    scanner.addCustomProtocol("deps/wlr-protocols/unstable/wlr-screencopy-unstable-v1.xml");
 
-    const exe = b.addExecutable("wcolor", "src/main.zig");
-    exe.setTarget(target);
-    exe.setBuildMode(mode);
-    exe.step.dependOn(&scanner.step);
-    exe.addPackage(scanner.getPkg());
-    exe.linkSystemLibrary("cairo");
+    scanner.generate("wl_shm", 1);
+    scanner.generate("wl_compositor", 1);
+    scanner.generate("wl_subcompositor", 1);
+    scanner.generate("wlr_layer_shell_unstable", 1);
+
+    const exe = b.addExecutable(.{ .name = "wcolor", .root_source_file = .{ .path = "src/main.zig" }, .target = target, .optimize = optimize });
+
+    exe.addModule("wayland", wayland);
     exe.linkLibC();
     exe.linkSystemLibrary("wayland-client");
+    exe.linkSystemLibrary("cairo");
 
     scanner.addCSource(exe);
 
-    exe.install();
-
-    const run_cmd = exe.run();
-    run_cmd.step.dependOn(b.getInstallStep());
-
-    const run_step = b.step("run", "Run the app");
-    run_step.dependOn(&run_cmd.step);
+    b.installArtifact(exe);
 }
